@@ -7,6 +7,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [translatingId, setTranslatingId] = useState<string | null>(null);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -65,6 +66,44 @@ export default function ChatPage() {
     }
   };
 
+  const handleTranslate = async (messageId: string, content: string) => {
+    if (translatingId === messageId) return;
+
+    setTranslatingId(messageId);
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text: content }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Translate request failed with status ${response.status}`);
+      }
+
+      const data: { translation?: string; error?: string } =
+        await response.json();
+
+      const translation =
+        data.translation ??
+        data.error ??
+        "Sorry, something went wrong while translating.";
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId ? { ...message, translation } : message,
+        ),
+      );
+    } catch (error) {
+      console.error("[ChatPage] Error translating message:", error);
+    } finally {
+      setTranslatingId(null);
+    }
+  };
+
   return (
     <ChatWindow
       messages={messages}
@@ -72,6 +111,8 @@ export default function ChatPage() {
       onInputChange={setInput}
       onSend={handleSend}
       isSending={isSending}
+      onTranslate={handleTranslate}
+      translatingMessageId={translatingId}
       emptyState={<p>Empieza a chatear para practicar tu español ✨</p>}
     />
   );

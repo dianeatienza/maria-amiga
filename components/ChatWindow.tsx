@@ -8,6 +8,7 @@ export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
+  translation?: string;
 }
 
 export interface ChatWindowProps {
@@ -18,6 +19,8 @@ export interface ChatWindowProps {
   onSend: () => void | Promise<void>;
   isSending?: boolean;
   emptyState?: ReactNode;
+  onTranslate?: (messageId: string, content: string) => void | Promise<void>;
+  translatingMessageId?: string | null;
 }
 
 export const ChatWindow: FC<ChatWindowProps> = ({
@@ -28,6 +31,8 @@ export const ChatWindow: FC<ChatWindowProps> = ({
   onSend,
   isSending,
   emptyState,
+  onTranslate,
+  translatingMessageId,
 }) => {
   const [theme, setTheme] = useState<ChatTheme>("light");
   const isLight = theme === "light";
@@ -85,6 +90,13 @@ export const ChatWindow: FC<ChatWindowProps> = ({
                 role={message.role}
                 content={message.content}
                 theme={messageTheme}
+                translation={message.translation}
+                onTranslateClick={
+                  onTranslate && message.role === "assistant"
+                    ? () => onTranslate(message.id, message.content)
+                    : undefined
+                }
+                isTranslating={translatingMessageId === message.id}
               />
             ))
           )}
